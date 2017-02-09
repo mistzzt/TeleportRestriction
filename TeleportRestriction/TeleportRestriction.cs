@@ -29,6 +29,8 @@ namespace TeleportRestriction
 		{
 			ServerApi.Hooks.GameInitialize.Register(this, OnInit, -2000);
 			ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInit, -2000);
+
+			GetDataHandlers.Teleport += OnTeleport;
 		}
 
 		protected override void Dispose(bool disposing)
@@ -37,8 +39,37 @@ namespace TeleportRestriction
 			{
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInit);
 				ServerApi.Hooks.GamePostInitialize.Deregister(this, OnPostInit);
+
+				GetDataHandlers.Teleport -= OnTeleport;
 			}
 			base.Dispose(disposing);
+		}
+
+		private void OnTeleport(object sender, GetDataHandlers.TeleportEventArgs e)
+		{
+			var flag = (BitsByte)e.Flag;
+
+			if (flag[0] || flag[1])
+				return;
+
+			if (e.ID > Main.maxPlayers || e.ID < 0 || TShock.Players[e.ID] == null)
+				return;
+
+			var ply = TShock.Players[e.ID];
+
+			if (ply?.Active != true)
+				return;
+
+			if (ply.HasPermission(BypassPermission))
+				return;
+
+			if (Trm.ShouldRes(ply.TileX, ply.TileY, (int) e.X / 16, (int) e.Y / 16))
+			{
+				ply.SendErrorMessage("无法传送.");
+				ply.Teleport(ply.TPlayer.position.X, ply.TPlayer.position.Y);
+				ply.Disable("禁止传送区域内传送", DisableFlags.None);
+				e.Handled = true;
+			}
 		}
 
 		private void OnPostInit(EventArgs args)
