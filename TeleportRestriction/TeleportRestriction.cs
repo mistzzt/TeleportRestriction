@@ -47,27 +47,25 @@ namespace TeleportRestriction
 
 		private void OnTeleport(object sender, GetDataHandlers.TeleportEventArgs e)
 		{
-			var flag = (BitsByte)e.Flag;
+			var flag = (BitsByte) e.Flag;
 
-			if (flag[0] || flag[1])
-				return;
-
-			if (e.ID > Main.maxPlayers || e.ID < 0 || TShock.Players[e.ID] == null)
-				return;
-
-			var ply = TShock.Players[e.ID];
-
-			if (ply?.Active != true)
-				return;
-
-			if (ply.HasPermission(BypassPermission))
-				return;
-
-			if (Trm.ShouldRes(ply.TileX, ply.TileY, (int) e.X / 16, (int) e.Y / 16))
+			if (flag[0]) // npc teleport
 			{
-				ply.SendErrorMessage("无法传送.");
-				ply.Teleport(ply.TPlayer.position.X, ply.TPlayer.position.Y);
-				ply.Disable("禁止传送区域内传送", DisableFlags.None);
+				return;
+			}
+
+			var player = TShock.Players.ElementAtOrDefault(e.ID);
+			if (player?.Active != true)
+				return;
+
+			if (player.HasPermission(BypassPermission))
+				return;
+
+			if (Trm.ShouldRes(player.TileX, player.TileY, (int)e.X / 16, (int)e.Y / 16))
+			{
+				player.SendErrorMessage("无法传送.");
+				player.Teleport(player.TPlayer.position.X, player.TPlayer.position.Y);
+				player.Disable("禁止传送区域内传送", DisableFlags.None);
 				e.Handled = true;
 			}
 		}
