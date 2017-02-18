@@ -61,6 +61,9 @@ namespace TeleportRestriction
 			if (player.HasPermission(BypassPermission))
 				return;
 
+			if (!flag[1] && Trm.IsInsideRoD(player, (int) e.X / 16, (int) e.Y / 16))
+				return;
+
 			if (Trm.ShouldRes(player.TileX, player.TileY, (int)e.X / 16, (int)e.Y / 16))
 			{
 				player.SendErrorMessage("无法传送.");
@@ -237,6 +240,7 @@ namespace TeleportRestriction
 				case "TPTOREGION":
 				case "TPOUT":
 				case "WARP":
+				case "INSIDEROD":
 					if (string.IsNullOrWhiteSpace(regionName))
 					{
 						args.Player.SendErrorMessage("区域名无效!");
@@ -292,6 +296,13 @@ namespace TeleportRestriction
 					Trm.Update(tr);
 					args.Player.SendSuccessMessage("{0}了跳跃至区域.", status.Value ? "允许" : "禁止");
 					break;
+				case "INSIDEROD":
+					tr = Trm.CheckExist(region);
+					// ReSharper disable once PossibleInvalidOperationException
+					tr.AllowInsideRoD = status.Value;
+					Trm.Update(tr);
+					args.Player.SendSuccessMessage("{0}了区域内传送法杖.", status.Value ? "允许" : "禁止");
+					break;
 				case "REMOVE":
 					// ReSharper disable once PossibleNullReferenceException
 					Trm.Remove(region.ID);
@@ -310,6 +321,7 @@ namespace TeleportRestriction
 						"tptoregion <区域名> <true/false> - - 玩家传送至区域内玩家",
 						"tpout <区域名> <true/false> - - 区域内玩家传送至区域外玩家",
 						"warp <区域名> <true/false> - - 玩家跳跃至区域内",
+						"insiderod <区域名> <true/false> - - 区域内传送法杖",
 						"remove <区域名> - - 删除区域内一切设定",
 						"list [页码] - - 显示所有区域",
 						"help [页码] - - 显示子指令帮助"

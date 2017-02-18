@@ -19,6 +19,8 @@ namespace TeleportRestriction
 
 		public bool AllowWarp { get; set; }
 
+		public bool AllowInsideRoD { get; set; }
+
 		public static TrRegion FromReader(QueryResult reader)
 		{
 			return new TrRegion
@@ -26,7 +28,8 @@ namespace TeleportRestriction
 				RegionId = reader.Get<int>("RegionId"),
 				AllowTpToRegion = reader.Get<int>("TpToRegion") > 0,
 				AllowTpOut = reader.Get<int>("TpOut") > 0,
-				AllowWarp = reader.Get<int>("Warp") > 0
+				AllowWarp = reader.Get<int>("Warp") > 0,
+				AllowInsideRoD = reader.Get<int>("InsideRoD") > 0
 			};
 		}
 	}
@@ -46,7 +49,8 @@ namespace TeleportRestriction
 				new SqlColumn("RegionId", MySqlDbType.Int32) { Unique = true },
 				new SqlColumn("TpToRegion", MySqlDbType.Int32),
 				new SqlColumn("TpOut", MySqlDbType.Int32),
-				new SqlColumn("Warp", MySqlDbType.Int32)
+				new SqlColumn("Warp", MySqlDbType.Int32),
+				new SqlColumn("InsideRoD", MySqlDbType.Int32)
 			);
 
 			var creator = new SqlTableCreator(db,
@@ -81,7 +85,7 @@ namespace TeleportRestriction
 			}
 		}
 
-		public bool Add(int regionId, bool tpToRegion, bool tpOut, bool warp)
+		public bool Add(int regionId, bool tpToRegion, bool tpOut, bool warp, bool insideRoD)
 		{
 			if (TrRegions.Any(t => t.RegionId == regionId))
 				return false;
@@ -91,14 +95,15 @@ namespace TeleportRestriction
 				RegionId = regionId,
 				AllowTpToRegion = tpToRegion,
 				AllowTpOut = tpOut,
-				AllowWarp = warp
+				AllowWarp = warp,
+				AllowInsideRoD = insideRoD
 			};
 			TrRegions.Add(tr);
 
 			try
 			{
-				_database.Query("INSERT INTO TpRestriction (RegionId, TpToRegion, TpOut, Warp) VALUES (@0, @1, @2, @3);",
-					tr.RegionId, tr.AllowTpToRegion, tr.AllowTpOut, tr.AllowWarp);
+				_database.Query("INSERT INTO TpRestriction (RegionId, TpToRegion, TpOut, Warp, InsideRoD) VALUES (@0, @1, @2, @3, @4);",
+					tr.RegionId, Convert.ToInt32(tr.AllowTpToRegion), Convert.ToInt32(tr.AllowTpOut), Convert.ToInt32(tr.AllowWarp), Convert.ToInt32(tr.AllowInsideRoD));
 				return true;
 			}
 			catch (Exception ex)
@@ -133,8 +138,8 @@ namespace TeleportRestriction
 		{
 			try
 			{
-				_database.Query("UPDATE TpRestriction SET TpToRegion=@0, TpOut=@1, Warp=@2 WHERE RegionId = @3",
-					region.AllowTpToRegion ? 1 : 0, region.AllowTpOut ? 1 : 0, region.AllowWarp ? 1 : 0, region.RegionId);
+				_database.Query("UPDATE TpRestriction SET TpToRegion=@0, TpOut=@1, Warp=@2, InsideRoD=@3 WHERE RegionId = @4",
+					Convert.ToInt32(region.AllowTpToRegion), Convert.ToInt32(region.AllowTpOut), Convert.ToInt32(region.AllowWarp), Convert.ToInt32(region.AllowInsideRoD), region.RegionId);
 			}
 			catch (Exception ex)
 			{
@@ -144,7 +149,7 @@ namespace TeleportRestriction
 
 		public TrRegion CheckExist(Region region)
 		{
-			Add(region.ID, true, true, true);
+			Add(region.ID, true, true, true, true);
 			return TrRegions.Single(t => t.RegionId == region.ID);
 		}
 
@@ -177,14 +182,22 @@ namespace TeleportRestriction
 		public bool ShouldRes(int sourceX, int sourceY, int targetX, int targetY)
 		{
 			return TrRegions
-				       .Where(t => !t.AllowTpToRegion) // 不允许tp进入的区域
-				       .Select(t => TShock.Regions.GetRegionByID(t.RegionId))
-				       .Any(r => r.InArea(targetX, targetY)) ||
-			       TrRegions
-				       .Where(t => !t.AllowTpOut) // 不允许出去的区域
-				       .Select(t => TShock.Regions.GetRegionByID(t.RegionId))
-				       .Any(r => r.InArea(sourceX, sourceY));
+					.Where(t => !t.AllowTpToRegion) // 不允许tp进入的区域
+					.Select(t => TShock.Regions.GetRegionByID(t.RegionId))
+					.Any(r => r.InArea(targetX, targetY)) ||
+				   TrRegions
+					.Where(t => !t.AllowTpOut) // 不允许出去的区域
+					.Select(t => TShock.Regions.GetRegionByID(t.RegionId))
+					.Any(r => r.InArea(sourceX, sourceY));
 
+		}
+
+		public bool IsInsideRoD(TSPlayer player, int targetX, int targetY)
+		{
+			return TrRegions
+					.Where(t => t.AllowInsideRoD)
+					.Select(t => TShock.Regions.GetRegionByID(t.RegionId))
+					.Any(r => r.InArea(targetX, targetY) && r.InArea(player.TileX, player.TileY));
 		}
 	}
 }
