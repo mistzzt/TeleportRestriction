@@ -8,7 +8,7 @@ using TShockAPI.DB;
 
 namespace TeleportRestriction
 {
-	[ApiVersion(2, 0)]
+	[ApiVersion(2, 1)]
 	public class TeleportRestriction : TerrariaPlugin
 	{
 		public const string BypassPermission = "teleportres.admin.bypass";
