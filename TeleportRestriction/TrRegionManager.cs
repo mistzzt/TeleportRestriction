@@ -184,11 +184,11 @@ namespace TeleportRestriction
 			return TrRegions
 					.Where(t => !t.AllowTpToRegion) // 不允许tp进入的区域
 					.Select(t => TShock.Regions.GetRegionByID(t.RegionId))
-					.Any(r => r.InArea(targetX, targetY)) ||
+					.Any(r => r?.InArea(targetX, targetY) == true) ||
 				   TrRegions
 					.Where(t => !t.AllowTpOut) // 不允许出去的区域
 					.Select(t => TShock.Regions.GetRegionByID(t.RegionId))
-					.Any(r => r.InArea(sourceX, sourceY));
+					.Any(r => r?.InArea(sourceX, sourceY) == true);
 
 		}
 
