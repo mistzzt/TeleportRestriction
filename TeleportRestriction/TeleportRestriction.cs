@@ -105,11 +105,11 @@ namespace TeleportRestriction
 
 			if (args.Parameters.Count == 1)
 			{
-				var players = TShock.Utils.FindPlayer(args.Parameters[0]);
+				var players = TSPlayer.FindByNameOrID(args.Parameters[0]);
 				if (players.Count == 0)
 					args.Player.SendErrorMessage("指定玩家无效!");
 				else if (players.Count > 1)
-					TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+					args.Player.SendMultipleMatchError(players.Select(p => p.Name));
 				else
 				{
 					var target = players[0];
@@ -137,13 +137,13 @@ namespace TeleportRestriction
 					return;
 				}
 
-				var players1 = TShock.Utils.FindPlayer(args.Parameters[0]);
-				var players2 = TShock.Utils.FindPlayer(args.Parameters[1]);
+				var players1 = TSPlayer.FindByNameOrID(args.Parameters[0]);
+				var players2 = TSPlayer.FindByNameOrID(args.Parameters[1]);
 
 				if (players2.Count == 0)
 					args.Player.SendErrorMessage("指定玩家无效!");
 				else if (players2.Count > 1)
-					TShock.Utils.SendMultipleMatchError(args.Player, players2.Select(p => p.Name));
+					args.Player.SendMultipleMatchError(players2.Select(p => p.Name));
 				else if (players1.Count == 0)
 				{
 					if (args.Parameters[0] == "*") // 不管这种情况
@@ -183,7 +183,7 @@ namespace TeleportRestriction
 						args.Player.SendErrorMessage("指定玩家无效!");
 				}
 				else if (players1.Count > 1)
-					TShock.Utils.SendMultipleMatchError(args.Player, players1.Select(p => p.Name));
+					args.Player.SendMultipleMatchError(players1.Select(p => p.Name));
 				else
 				{
 					var source = players1[0];
